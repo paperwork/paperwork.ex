@@ -7,14 +7,14 @@ defmodule Paperwork.Helpers.Response do
     end
 
     def resp(%Plug.Conn{}=conn, {http_status, %{status: status, content: content}}) do
-      case http_status do
-        :ok           -> conn |> Plug.Conn.put_status(200) |> resp_json(status, content)
-        :badrequest   -> conn |> Plug.Conn.put_status(400) |> resp_json(status, content)
-        :unauthorized -> conn |> Plug.Conn.put_status(401) |> resp_json(status, content)
-        :notfound     -> conn |> Plug.Conn.put_status(404) |> resp_json(status, content)
-        :error        -> conn |> Plug.Conn.put_status(500) |> resp_json(status, content)
-        other         -> conn |> Plug.Conn.put_status(500) |> resp_json(500, other)
-      end
+        case http_status do
+            :ok           -> conn |> Plug.Conn.put_status(200) |> resp_json(status, content)
+            :badrequest   -> conn |> Plug.Conn.put_status(400) |> resp_json(status, content)
+            :unauthorized -> conn |> Plug.Conn.put_status(401) |> resp_json(status, content)
+            :notfound     -> conn |> Plug.Conn.put_status(404) |> resp_json(status, content)
+            :error        -> conn |> Plug.Conn.put_status(500) |> resp_json(status, content)
+            other         -> conn |> Plug.Conn.put_status(500) |> resp_json(500, other)
+        end
     end
 
     def resp(%Plug.Conn{}=conn, {:ok, data}) do

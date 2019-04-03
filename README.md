@@ -6,8 +6,8 @@ Paperwork Elixir SDK
 
 ```elixir
 def deps do
-  [
-    {:paperwork, git: "https://github.com/paperwork/paperwork.ex.git"}
-  ]
+    [
+        {:paperwork, git: "https://github.com/paperwork/paperwork.ex.git"}
+    ]
 end
 ```
