@@ -17,10 +17,7 @@ defmodule Paperwork.Auth.Plug.SessionLoader do
     end
 
     defp process_token(%{"typ" => "access", "sub" => user_id} = _decoded_token) do
-        case BSON.ObjectId.decode!(user_id) |> Paperwork.Collections.User.show do
-            {:ok, user} -> {:ok, Map.from_struct(user)}
-            other -> other
-        end
+        user_id |> Paperwork.Internal.Request.user()
     end
 
     defp process_token(other) do
