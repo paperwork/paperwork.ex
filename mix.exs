@@ -13,12 +13,13 @@ defmodule Paperwork.MixProject do
 
     def application do
         [
-            extra_applications: [:logger]
+            extra_applications: [:confex, :cachex, :logger]
         ]
     end
 
     defp deps do
         [
+            {:confex, "~> 3.4"},
             {:maru, "~> 0.14.0-pre.1"},
             {:plug_cowboy, "~> 2.0"},
             {:jason, "~> 1.1"},
@@ -28,7 +29,8 @@ defmodule Paperwork.MixProject do
             {:bcrypt_elixir, "~> 2.0"},
             {:joken, "~> 2.0"},
             {:mojito, "~> 0.1.1"},
-            {:exsync, "~> 0.2", only: :dev}
+            {:exsync, "~> 0.2", only: :dev},
+            {:cachex, "~> 3.1"}
         ]
     end
 end
