@@ -16,7 +16,7 @@ defmodule Paperwork do
 
             resources do
                 get do
-                    json(conn, %{hello: :paperworkex})
+                    json(conn, %{library: :paperworkex})
                 end
             end
 
