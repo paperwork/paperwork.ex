@@ -16,8 +16,14 @@ defmodule Paperwork.Auth.Plug.SessionLoader do
         end
     end
 
-    defp process_token(%{"typ" => "access", "sub" => user_id} = _decoded_token) do
-        user_id |> Paperwork.Internal.Request.user()
+    defp process_token(%{"typ" => "access", "sub" => user_id, "aud" => system_id} = _decoded_token) do
+        case user_id |> Paperwork.Internal.Request.user() do
+            {:ok, user_string_map} ->
+                user_map = Paperwork.Collections.keys_to_atoms(user_string_map)
+                           |> Map.put(:system_id, system_id)
+                {:ok, user_map }
+            other -> other
+        end
     end
 
     defp process_token(other) do
