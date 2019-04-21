@@ -21,6 +21,10 @@ defmodule Paperwork.Helpers.Response do
       resp(conn, {:ok, %{status: 0, content: data}})
     end
 
+    def resp(%Plug.Conn{}=conn, {:notfound, _}) do
+      resp(conn, {:notfound, %{status: 1, content: %{}}})
+    end
+
     defp resp_json(%Plug.Conn{}=conn, stat, data) when is_integer(stat) do
         {:ok, now} = DateTime.now("Etc/UTC")
         resp = %{
