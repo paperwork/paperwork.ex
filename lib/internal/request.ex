@@ -1,9 +1,9 @@
 defmodule Paperwork.Internal.Request do
     require Logger
 
-    def entity_from_response(url, %Mojito.Response{body: body, status_code: 200, headers: headers} = response) when is_binary(url) and is_binary(body) and is_list(headers) do
+    def entity_from_response(url, %Mojito.Response{body: body, status_code: 200, headers: headers} = _response) when is_binary(url) and is_binary(body) and is_list(headers) do
         entity = Jason.decode!(body) |> Map.get("content")
-        Cachex.put!(:paperwork_resources, url, entity)
+        Cachex.put!(:paperwork_resources, url, entity, ttl: :timer.seconds(Confex.fetch_env!(:paperwork, :internal)[:cache_ttl]))
         {:ok, entity}
     end
 
@@ -20,11 +20,14 @@ defmodule Paperwork.Internal.Request do
 
     def request_get_cached(url) when is_binary(url) do
         case Cachex.get(:paperwork_resources, url) do
+            {:ok, nil} ->
+                Logger.debug("No cached result for #{url}: nil")
+                request_get(url)
             {:ok, entity} ->
                 Logger.debug("Returning cached result for #{url}")
                 {:ok, entity}
             other ->
-                Logger.debug("No cached result for #{url}")
+                Logger.debug("No cached result for #{url}: #{inspect other}")
                 request_get(url)
         end
     end

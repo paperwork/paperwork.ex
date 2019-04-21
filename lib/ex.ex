@@ -1,5 +1,6 @@
 defmodule Paperwork.Ex do
     use Supervisor
+    import Cachex.Spec
 
     def start_link(opts) do
         Supervisor.start_link(__MODULE__, opts)
@@ -14,7 +15,16 @@ defmodule Paperwork.Ex do
         end
 
         children = [
-            worker(Cachex, [:paperwork_resources, []])
+            worker(Cachex, [
+                :paperwork_resources,
+                [
+                    expiration: expiration(
+                        default: :timer.seconds(Confex.fetch_env!(:paperwork, :server)[:cache_ttl_default]),
+                        interval: :timer.seconds(Confex.fetch_env!(:paperwork, :server)[:cache_janitor_interval]),
+                        lazy: false
+                    )
+                ]
+            ])
         ]
 
         Supervisor.init(children, strategy: :one_for_one, name: Paperwork.Ex.Supervisor)
