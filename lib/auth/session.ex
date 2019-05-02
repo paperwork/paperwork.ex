@@ -6,18 +6,30 @@ defmodule Paperwork.Auth.Session do
         conn.private[:paperwork_user]
     end
 
+    def get_global_id(%Plug.Conn{}=conn) do
+        user_id = get_user_id(conn)
+        system_id = get_system_id(conn)
+        construct_global_id(user_id, system_id)
+    end
+
+    def get_user_id(%Plug.Conn{}=conn) do
+        conn.private[:paperwork_user] |> Map.get(:id)
+    end
+
+    def get_user_role(%Plug.Conn{}=conn) do
+        conn.private[:paperwork_user] |> Map.get(:role)
+    end
+
+    def get_system_id(%Plug.Conn{}=conn) do
+        conn.private[:paperwork_user] |> Map.get(:system_id)
+    end
+
     def construct_global_id(user_id, system_id) when is_binary(user_id) and is_binary(system_id) do
         "#{user_id}@#{system_id}"
     end
 
     def construct_global_id(user_id, system_id) when is_nil(user_id) or is_nil(system_id) do
         nil
-    end
-
-    def get_global_id(%Plug.Conn{}=conn) do
-        user_id = conn.private[:paperwork_user] |> Map.get(:id)
-        system_id = conn.private[:paperwork_user] |> Map.get(:system_id)
-        construct_global_id(user_id, system_id)
     end
 
     def token_config, do: default_claims(default_exp: 60 * 60, iss: "Paperwork", aud: "paperwork-client")
