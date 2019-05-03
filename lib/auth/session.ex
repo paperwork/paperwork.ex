@@ -35,7 +35,7 @@ defmodule Paperwork.Auth.Session do
     def token_config, do: default_claims(default_exp: 60 * 60, iss: "Paperwork", aud: "paperwork-client")
 
     def create(%{id: id} = user) when is_map(user) do
-        signer = Joken.Signer.parse_config(:hs512)
+        signer = Joken.Signer.create("HS512", Confex.fetch_env!(:paperwork, :server)[:jwt_secret])
         with \
             {:ok, %{"id" => _id, "key" => "system_id", "value" => system_id}} <- Paperwork.Internal.Request.config("system_id"),
             {:ok, claims} <- Joken.generate_claims(token_config(), %{"sub" => BSON.ObjectId.encode!(id), "typ" => "access", "aud" => system_id}),
