@@ -24,6 +24,18 @@ defmodule Paperwork.Auth.Session do
         conn.private[:paperwork_user] |> Map.get(:system_id)
     end
 
+    def get_paperwork_id(%Plug.Conn{}=conn) do
+        user_id =
+            conn
+            |> get_user_id()
+        system_id =
+            conn
+            |> get_system_id()
+
+        construct_global_id(user_id, system_id)
+        |> Paperwork.Id.from_gid()
+    end
+
     def construct_global_id(user_id, system_id) when is_binary(user_id) and is_binary(system_id) do
         "#{user_id}@#{system_id}"
     end
