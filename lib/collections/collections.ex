@@ -22,6 +22,11 @@ defmodule Paperwork.Collections do
                 end
             end
 
+            def fields() do
+                Map.delete(%__MODULE__{}, :__struct__)
+                |> Map.keys()
+            end
+
             @spec found_or_nil(result :: Map.t) :: {:ok, %__MODULE__{}}
             defp found_or_nil(%{"_id" => _id} = result) do
                 {:ok, (struct(__MODULE__, Paperwork.Collections.keys_to_atoms(result)) |> Map.put(:id, result["_id"]))}
