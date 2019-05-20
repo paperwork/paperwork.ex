@@ -116,12 +116,12 @@ defmodule Paperwork.Internal.Request do
     end
 
     def attachment(attachment_id, true=_cached) when is_binary(attachment_id) do
-        url = "#{Paperwork.Internal.Resource.storages()}/attachments/#{attachment_id}"
+        url = "#{Paperwork.Internal.Resource.storages()}/#{attachment_id}"
         request_get_cached(url)
     end
 
     def attachment(attachment_id, false=_cached) when is_binary(attachment_id) do
-        url = "#{Paperwork.Internal.Resource.storages()}/attachments/#{attachment_id}"
+        url = "#{Paperwork.Internal.Resource.storages()}/#{attachment_id}"
         request_get(url)
     end
 
