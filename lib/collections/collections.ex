@@ -61,7 +61,7 @@ defmodule Paperwork.Collections do
             end
 
             @spec ok_or_error(result :: {:ok, %{}} | {}, id_key :: Atom.t, model :: %__MODULE__{}) :: {:ok, %__MODULE__{}} | {:error, String.t}
-            def ok_or_error(result, id_key, model) do
+            def ok_or_error(result, id_key, %__MODULE__{__struct__: _} = model) do
                 case result do
                     {:ok, ok} ->
                         {:ok, Map.put(model, :id, Map.get(ok, id_key))}
@@ -69,6 +69,11 @@ defmodule Paperwork.Collections do
                         Logger.error "Error: #{inspect(other)}"
                         {:error, "Internel Server Error"}
                 end
+            end
+
+            @spec ok_or_error(result :: {:ok, %{}} | {}, id_key :: Atom.t, model :: %{}) :: {:ok, %__MODULE__{}} | {:error, String.t}
+            def ok_or_error(result, id_key, %{} = model) do
+                ok_or_error(result, id_key, struct(__MODULE__, model))
             end
 
             @spec strip_privates({:ok, model :: %__MODULE__{}}) :: {:ok, %__MODULE__{}}
@@ -133,9 +138,30 @@ defmodule Paperwork.Collections do
             end
 
             @spec collection_insert(model :: %__MODULE__{}) :: {:ok, %__MODULE__{}} | {:error, String.t}
-            def collection_insert(%__MODULE__{} = model) do
+            def collection_insert(%__MODULE__{__struct__: _} = model) do
+                model
+                |> Map.from_struct()
+                |> collection_insert()
+            end
+
+            @spec collection_insert(model :: %{}) :: {:ok, %__MODULE__{}} | {:error, String.t}
+            def collection_insert(%{} = model) do
                 Mongo.insert_one(:mongo, @collection, Map.delete(model, :id), pool: DBConnection.Poolboy)
                 |> ok_or_error(:inserted_id, model)
+            end
+
+            @spec collection_insert_with_id(model :: %__MODULE__{}) :: {:ok, %__MODULE__{}} | {:error, String.t}
+            def collection_insert_with_id(%__MODULE__{__struct__: _, id: id} = model) when is_map(id) do
+                model
+                |> Map.from_struct()
+                |> collection_insert_with_id()
+            end
+
+            @spec collection_insert_with_id(model :: %{}) :: {:ok, %__MODULE__{}} | {:error, String.t}
+            def collection_insert_with_id(%{} = model) do
+                model
+                |> Map.put(:_id, Map.get(model, :id))
+                |> collection_insert()
             end
 
             @spec collection_update(model :: %__MODULE__{}, filter_key :: Atom.t) :: {:ok, %__MODULE__{}} | {:error, String.t}
