@@ -28,7 +28,7 @@ defmodule Paperwork.MixProject do
             {:poolboy, "~> 1.5"},
             {:bcrypt_elixir, "~> 2.0"},
             {:joken, "~> 2.0"},
-            {:mojito, "~> 0.1.1"},
+            {:mojito, "~> 0.3.0"},
             {:exsync, "~> 0.2", only: :dev},
             {:cachex, "~> 3.1"}
         ]
