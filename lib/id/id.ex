@@ -25,14 +25,14 @@ defmodule Paperwork.Id do
             resource_gid
             |> Enum.at(0)
 
-        # TODO: The initially provided system_id (if any) is being overwritten here.
-        # This might break stuff. Think of how to implement this correctly.
         resource_system_id =
-            resource_gid
-            |> Enum.at(1,
-                config_system_id
-                |> Map.get("value"))
-
+            case Enum.at(resource_gid, 1) do
+                nil ->
+                    config_system_id
+                    |> Map.get("value")
+                existing_system_id ->
+                    existing_system_id
+            end
 
         %__MODULE__{
             gid: gid,
