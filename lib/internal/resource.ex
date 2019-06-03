@@ -3,4 +3,5 @@ defmodule Paperwork.Internal.Resource do
     def users(),       do: Confex.fetch_env!(:paperwork, :internal)[:users]
     def notes(),       do: Confex.fetch_env!(:paperwork, :internal)[:notes]
     def attachments(), do: Confex.fetch_env!(:paperwork, :internal)[:attachments]
+    def journals(),    do: Confex.fetch_env!(:paperwork, :internal)[:journals]
 end

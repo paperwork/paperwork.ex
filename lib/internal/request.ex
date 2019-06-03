@@ -132,4 +132,29 @@ defmodule Paperwork.Internal.Request do
         end
     end
 
+    # ╔════════════════════════════════════════════════════════════════════════════╗
+    # ║ Journal                                                                    ║
+    # ╚════════════════════════════════════════════════════════════════════════════╝
+
+    def journal(journal_id) when is_binary(journal_id) do
+        journal(journal_id, true)
+    end
+
+    def journal(journal_id, true=_cached) when is_binary(journal_id) do
+        url = "#{Paperwork.Internal.Resource.journals()}/#{journal_id}"
+        request_get_cached(url)
+    end
+
+    def journal(journal_id, false=_cached) when is_binary(journal_id) do
+        url = "#{Paperwork.Internal.Resource.journals()}/#{journal_id}"
+        request_get(url)
+    end
+
+    def journal!(journal_id, cached \\ true) when is_binary(journal_id) do
+        case journal(journal_id, cached) do
+            {:ok, response} -> response
+            _ -> nil
+        end
+    end
+
 end
