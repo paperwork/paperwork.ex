@@ -13,5 +13,14 @@ config :paperwork, :internal,
     attachments: {:system, :string, "INTERNAL_RESOURCE_ATTACHMENTS", "http://localhost:8883/internal/attachments"},
     journals:    {:system, :string, "INTERNAL_RESOURCE_JOURNALS",    "http://localhost:8884/internal/journals"}
 
+config :paperwork, :events,
+    url: {:system, :string, "EVENTS_URL", "amqp://localhost"},
+    reconnect_interval: {:system, :integer, "EVENTS_RECONNECT_INTERVAL", 10_000},
+    exchange: {:system, :string, "EVENTS_EXCHANGE", "tests_exchange"},
+    queue: {:system, :string, "EVENTS_QUEUE", "tests_queue"},
+    dead_letter_exchange: {:system, :string, "EVENTS_DEAD_LETTER_EXCHANGE", "tests_dead_letter_exchange"},
+    dead_letter_queue: {:system, :string, "EVENTS_DEAD_LETTER_QUEUE", "tests_dead_letter_queue"},
+    handler: nil
+
 config :logger,
     backends: [:console]
