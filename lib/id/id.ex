@@ -42,7 +42,7 @@ defmodule Paperwork.Id do
     end
 
     def validate_gid(gid) when is_binary(gid) do
-        case Regex.match?(~r/([0-9a-f]{24}){1}@([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}){1}/, gid) do
+        case Regex.match?(~r/^([0-9a-f]{24}){1}@([0-9a-f]{24}){1}$/i, gid) do
             true -> {:ok, gid}
             false -> {:error, "Not a global ID"}
         end
