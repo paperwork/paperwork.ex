@@ -2,19 +2,8 @@ defmodule Paperwork.Events.Consumer do
     use GenServer
     require Logger
 
-    def events_url, do: Confex.fetch_env!(:paperwork, :events)[:url]
-    def events_reconnect_interval, do: Confex.fetch_env!(:paperwork, :events)[:reconnect_interval]
-
-    def events_exchange, do: Confex.fetch_env!(:paperwork, :events)[:exchange]
-    def events_queue, do: Confex.fetch_env!(:paperwork, :events)[:queue]
-
-    def events_dead_letter_exchange, do: Confex.fetch_env!(:paperwork, :events)[:dead_letter_exchange]
-    def events_dead_letter_queue, do: Confex.fetch_env!(:paperwork, :events)[:dead_letter_queue]
-
-    def events_consumer, do: Confex.fetch_env!(:paperwork, :events)[:handler]
-
-    def start_link(opts \\ [name: __MODULE__]) do
-        GenServer.start_link(__MODULE__, nil, opts)
+    def start_link(args) do
+        GenServer.start_link __MODULE__, args, name: __MODULE__
     end
 
     def init(_) do
@@ -35,7 +24,7 @@ defmodule Paperwork.Events.Consumer do
 
     def handle_info(:connect, conn) do
         amqp_url =
-            events_url()
+            Paperwork.Helpers.Event.events_url()
 
         case AMQP.Connection.open(amqp_url) do
             {:ok, conn} ->
@@ -46,7 +35,7 @@ defmodule Paperwork.Events.Consumer do
 
             {:error, _} ->
                 Logger.error("Failed to connect to events stream on #{amqp_url}. Reconnecting soon ...")
-                Process.send_after(self(), :connect, events_reconnect_interval())
+                Process.send_after(self(), :connect, Paperwork.Helpers.Event.events_reconnect_interval())
                 {:noreply, nil}
         end
     end
@@ -84,35 +73,35 @@ defmodule Paperwork.Events.Consumer do
         {:ok, _} =
             chan
             |> AMQP.Queue.declare(
-                events_dead_letter_queue(), durable: true
+                Paperwork.Helpers.Event.events_dead_letter_queue(), durable: true
             )
 
         :ok =
             chan
-            |> AMQP.Exchange.direct(events_dead_letter_exchange(), durable: true)
+            |> AMQP.Exchange.direct(Paperwork.Helpers.Event.events_dead_letter_exchange(), durable: true)
 
         :ok =
             chan
-            |> AMQP.Queue.bind(events_dead_letter_queue(), events_dead_letter_exchange())
+            |> AMQP.Queue.bind(Paperwork.Helpers.Event.events_dead_letter_queue(), Paperwork.Helpers.Event.events_dead_letter_exchange())
 
         {:ok, _} =
             chan
             |> AMQP.Queue.declare(
-                events_queue(),
+                Paperwork.Helpers.Event.events_queue(),
                 durable: true,
                 arguments: [
-                    {"x-dead-letter-exchange", :longstr, events_dead_letter_exchange()},
-                    {"x-dead-letter-routing-key", :longstr, events_dead_letter_queue()}
+                    {"x-dead-letter-exchange", :longstr, Paperwork.Helpers.Event.events_dead_letter_exchange()},
+                    {"x-dead-letter-routing-key", :longstr, Paperwork.Helpers.Event.events_dead_letter_queue()}
                 ]
             )
 
         :ok =
             chan
-            |> AMQP.Exchange.direct(events_exchange(), durable: true)
+            |> AMQP.Exchange.direct(Paperwork.Helpers.Event.events_exchange(), durable: true)
 
         :ok =
             chan
-            |> AMQP.Queue.bind(events_queue(), events_exchange())
+            |> AMQP.Queue.bind(Paperwork.Helpers.Event.events_queue(), Paperwork.Helpers.Event.events_exchange())
 
         :ok =
             chan
@@ -120,13 +109,13 @@ defmodule Paperwork.Events.Consumer do
 
         {:ok, _consumer_tag} =
             chan
-            |> AMQP.Basic.consume(events_queue())
+            |> AMQP.Basic.consume(Paperwork.Helpers.Event.events_queue())
 
         {:ok, chan}
     end
 
     def consume(channel, tag, redelivered, payload) do
-        case events_consumer().consume(payload, tag, redelivered) do
+        case Paperwork.Helpers.Event.events_consumer().consume(payload, tag, redelivered) do
             {:ok, tag_return} ->
                 channel
                 |> AMQP.Basic.ack(tag_return)
