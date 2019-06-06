@@ -26,3 +26,4 @@ paperwork-*.tar
 /.formatter.exs
 .DS_Store
 *.sublime-workspace
+/log
