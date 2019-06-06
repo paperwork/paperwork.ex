@@ -2,11 +2,8 @@ defmodule Paperwork.Events.Publisher do
     use GenServer
     require Logger
 
-    def events_url, do: Confex.fetch_env!(:paperwork, :events)[:url]
-    def events_reconnect_interval, do: Confex.fetch_env!(:paperwork, :events)[:reconnect_interval]
-
-    def start_link(opts \\ [name: __MODULE__]) do
-        GenServer.start_link(__MODULE__, nil, opts)
+    def start_link(args) do
+        GenServer.start_link __MODULE__, args, name: __MODULE__
     end
 
     def init(_) do
@@ -27,7 +24,7 @@ defmodule Paperwork.Events.Publisher do
 
     def handle_info(:connect, _conn) do
         amqp_url =
-            events_url()
+            Paperwork.Helpers.Event.events_url()
 
         case AMQP.Connection.open(amqp_url) do
             {:ok, conn} ->
@@ -38,7 +35,7 @@ defmodule Paperwork.Events.Publisher do
 
             {:error, _} ->
                 Logger.error("Failed to connect to events stream on #{amqp_url}. Reconnecting soon ...")
-                Process.send_after(self(), :connect, events_reconnect_interval())
+                Process.send_after(self(), :connect, Paperwork.Helpers.Event.events_reconnect_interval())
                 {:noreply, nil}
         end
     end
@@ -48,30 +45,40 @@ defmodule Paperwork.Events.Publisher do
         {:stop, {:connection_lost, reason}, nil}
     end
 
-    def handle_call({:publish, exchange, routing_key, payload}, channel) do
-        Logger.debug("Publishing event to #{inspect exchange} / #{inspect routing_key} ...")
+    def handle_cast({:publish, exchange, routing_key, payload}, channel) do
+        Logger.debug("Publishing event to #{inspect exchange} / #{inspect routing_key} in channel #{inspect channel} ...")
 
         payload_string =
             Jason.encode!(payload)
-            |> IO.inspect
 
         :ok =
             channel
             |> AMQP.Basic.publish(exchange, routing_key, payload_string, [persistent: false])
 
-        {:reply, :ok, channel}
+        AMQP.Confirm.wait_for_confirms(channel, 60)
+
+        Logger.debug("Published payload #{inspect payload_string}!")
+
+        {:noreply, channel}
     rescue
         exception ->
             Logger.error("#{inspect exception}")
-            {:reply, :error, channel}
+            {:noreply, channel}
     end
 
     defp setup(conn) do
-        conn
-        |> AMQP.Channel.open()
+        {:ok, chan} =
+            conn
+            |> AMQP.Channel.open()
+
+        :ok =
+            chan
+            |> AMQP.Confirm.select()
+
+        {:ok, chan}
     end
 
-    def publish(exchange, routing_key, payload) when is_binary(exchange) and is_binary(routing_key) and is_map(payload) do
-        GenServer.call(__MODULE__, {:publish, exchange, routing_key, payload})
+    def publish(payload, exchange, routing_key) when is_map(payload) and is_binary(exchange) and is_binary(routing_key) do
+        GenServer.cast(__MODULE__, {:publish, exchange, routing_key, payload})
     end
 end
