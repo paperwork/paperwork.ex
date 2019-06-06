@@ -29,6 +29,7 @@ defmodule Paperwork.MixProject do
             {:bcrypt_elixir, "~> 2.0"},
             {:joken, "~> 2.0"},
             {:mojito, "~> 0.3.0"},
+            {:amqp, "~> 1.2"},
             {:exsync, "~> 0.2", only: :dev},
             {:cachex, "~> 3.1"}
         ]
