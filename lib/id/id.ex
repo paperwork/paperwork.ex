@@ -49,5 +49,22 @@ defmodule Paperwork.Id do
     end
 
     def validate_gid(gid) when is_binary(gid) == false, do: {:error, "Not a global ID"}
+
+    def string_is_objectid(id) when is_binary(id) do
+        Regex.match?(~r/^([0-9a-f]{24}){1}$/i, id)
+    end
+
+    # def string_is_uuid(id) when is_binary(id) do
+    #     Regex.match?(~r/^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}){1}$/i, id)
+    # end
+
+    def maybe_id_to_objectid(id) when is_binary(id) do
+        case string_is_objectid(id) do
+            true ->
+                id |> BSON.ObjectId.decode!()
+            false ->
+                id
+        end
+    end
 end
 
