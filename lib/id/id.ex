@@ -35,7 +35,7 @@ defmodule Paperwork.Id do
             end
 
         %__MODULE__{
-            gid: gid,
+            gid: "#{resource_id}@#{resource_system_id}",
             id: resource_id,
             system_id: resource_system_id
         }
