@@ -38,7 +38,7 @@ defmodule Paperwork.Helpers.Journal do
             resource: resource |> validate_resource!(),
             resource_id: resource_id |> validate_resource_id!(),
             resource_system_id: resource_system_id |> validate_resource_system_id!(),
-            content: content |> validate_content!()
+            content: content |> validate_content!() |> Paperwork.Helpers.Map.unstruct!()
         }
     end
 
