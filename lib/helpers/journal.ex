@@ -6,8 +6,15 @@ defmodule Paperwork.Helpers.Journal do
             {:ok, content} ->
                 Logger.debug("Sending journal event ...")
 
+                resource_id =
+                    cond do
+                        is_binary(content.id) == true -> content.id
+                        is_map(content.id) == true -> content.id |> BSON.ObjectId.encode!()
+                        true -> raise "Not a valid resource id!"
+                    end
+
                 params
-                |> Paperwork.Helpers.Journal.journal_entry_payload(action, resource, Paperwork.Id.from_gid(content.id), trigger, Paperwork.Id.from_gid(global_id))
+                |> Paperwork.Helpers.Journal.journal_entry_payload(action, resource, Paperwork.Id.from_gid(resource_id), trigger, Paperwork.Id.from_gid(global_id))
                 |> Paperwork.Events.Publisher.publish(Paperwork.Helpers.Event.events_exchange(), "")
             _ ->
                 Logger.debug("Not sending journal event.")
