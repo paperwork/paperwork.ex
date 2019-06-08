@@ -11,6 +11,11 @@ defmodule Paperwork.Internal.Request do
         {:ok, entity}
     end
 
+    def entity_from_response(url, params, %Mojito.Response{body: body, status_code: 404, headers: headers} = _response) when is_binary(url) and is_map(params) and is_binary(body) and is_list(headers) do
+        entity = Jason.decode!(body) |> Map.get("content")
+        {:notfound, entity}
+    end
+
     def entity_from_response(url, params, %Mojito.Response{body: body, status_code: status_code, headers: headers} = response) when is_binary(url) and is_map(params) and is_binary(body) and is_integer(status_code) and is_list(headers) do
         {:error, response}
     end
