@@ -14,6 +14,12 @@ defmodule Paperwork.Id do
 
     def split_gid(gid) when is_binary(gid), do: String.split(gid, "@")
 
+    def from_gid(gid) when is_atom(gid) do
+        gid
+        |> Atom.to_string()
+        |> from_gid()
+    end
+
     def from_gid(gid) when is_binary(gid) do
         {:ok, config_system_id} = Paperwork.Internal.Request.config("system_id")
 
@@ -39,6 +45,10 @@ defmodule Paperwork.Id do
             id: resource_id,
             system_id: resource_system_id
         }
+    end
+
+    def from_gid(nil) do
+        nil
     end
 
     def validate_gid(gid) when is_binary(gid) do
