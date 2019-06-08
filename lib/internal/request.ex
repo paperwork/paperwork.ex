@@ -1,34 +1,42 @@
 defmodule Paperwork.Internal.Request do
     require Logger
 
-    def entity_from_response(url, %Mojito.Response{body: body, status_code: 200, headers: headers} = _response) when is_binary(url) and is_binary(body) and is_list(headers) do
+    def get_caching_id(url, params) when is_binary(url) and is_map(params), do: url <> Enum.map_join(params, "_", fn {key, val} -> "#{key}_#{val}" end)
+
+    def entity_from_response(url, params, %Mojito.Response{body: body, status_code: 200, headers: headers} = _response) when is_binary(url) and is_map(params) and is_binary(body) and is_list(headers) do
         entity = Jason.decode!(body) |> Map.get("content")
-        Cachex.put!(:paperwork_resources, url, entity, ttl: :timer.seconds(Confex.fetch_env!(:paperwork, :internal)[:cache_ttl]))
+        caching_id = get_caching_id(url, params)
+
+        Cachex.put!(:paperwork_resources, caching_id, entity, ttl: :timer.seconds(Confex.fetch_env!(:paperwork, :internal)[:cache_ttl]))
         {:ok, entity}
     end
 
-    def entity_from_response(url, %Mojito.Response{body: body, status_code: status_code, headers: headers} = response) when is_binary(url) and is_binary(body) and is_integer(status_code) and is_list(headers) do
+    def entity_from_response(url, params, %Mojito.Response{body: body, status_code: status_code, headers: headers} = response) when is_binary(url) and is_map(params) and is_binary(body) and is_integer(status_code) and is_list(headers) do
         {:error, response}
     end
 
-    def request_get(url) when is_binary(url) do
-        case Mojito.request(:get, url) do
-            {:ok, response} -> url |> entity_from_response(response)
+    def request_get(url, params \\ %{}) when is_binary(url) and is_map(params) do
+        url_with_query = url <> "?" <> URI.encode_query(params)
+
+        case Mojito.request(:get, url_with_query) do
+            {:ok, response} -> url |> entity_from_response(params, response)
             other -> {:error, other}
         end
     end
 
-    def request_get_cached(url) when is_binary(url) do
-        case Cachex.get(:paperwork_resources, url) do
+    def request_get_cached(url, params \\ %{}) when is_binary(url) and is_map(params) do
+        caching_id = get_caching_id(url, params)
+
+        case Cachex.get(:paperwork_resources, caching_id) do
             {:ok, nil} ->
-                Logger.debug("No cached result for #{url}: nil")
-                request_get(url)
+                Logger.debug("No cached result for #{caching_id}: nil")
+                request_get(url, params)
             {:ok, entity} ->
-                Logger.debug("Returning cached result for #{url}")
+                Logger.debug("Returning cached result for #{caching_id}")
                 {:ok, entity}
             other ->
-                Logger.debug("No cached result for #{url}: #{inspect other}")
-                request_get(url)
+                Logger.debug("No cached result for #{caching_id}: #{inspect other}")
+                request_get(url, params)
         end
     end
 
