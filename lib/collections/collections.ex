@@ -119,6 +119,13 @@ defmodule Paperwork.Collections do
                 BSON.ObjectId.decode!(value)
             end
 
+            @spec collection_aggregate(pipeline :: Map.t) :: {:ok, %__MODULE__{}} | {:ok, [%__MODULE__{}]} | {:notfound, nil}
+            def collection_aggregate(pipeline) when is_list(pipeline) do
+                Mongo.aggregate(:mongo, @collection, pipeline, [pool: DBConnection.Poolboy, allow_disk_use: true])
+                |> Enum.to_list
+                |> found_or_nil
+            end
+
             @spec collection_find(query :: Map.t, expect_many :: Boolean.t) :: {:ok, %__MODULE__{}} | {:ok, [%__MODULE__{}]} | {:notfound, nil}
             def collection_find(%{} = query, expect_many) when is_map(query) and is_boolean(expect_many) and expect_many == true do
                 Mongo.find(:mongo, @collection, query, pool: DBConnection.Poolboy)
