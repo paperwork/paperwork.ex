@@ -21,6 +21,14 @@ defmodule Paperwork.Helpers.Response do
       resp(conn, {:ok, %{status: 0, content: data}})
     end
 
+    def resp(%Plug.Conn{}=conn, {:badrequest, data}) do
+      resp(conn, {:badrequest, %{status: 1, content: data}})
+    end
+
+    def resp(%Plug.Conn{}=conn, {:unauthorized, data}) do
+      resp(conn, {:unauthorized, %{status: 1, content: data}})
+    end
+
     def resp(%Plug.Conn{}=conn, {:notfound, _}) do
       resp(conn, {:notfound, %{status: 1, content: %{}}})
     end
