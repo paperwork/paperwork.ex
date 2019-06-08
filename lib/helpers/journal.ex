@@ -1,20 +1,20 @@
 defmodule Paperwork.Helpers.Journal do
     require Logger
 
-    def api_response_to_journal(response, params, action, resource, trigger, global_id) do
+    def api_response_to_journal(response, content, action, resource, trigger, global_id, relevance) when is_map(content) and is_list(relevance) do
         case response do
-            {:ok, content} ->
+            {:ok, model} ->
                 Logger.debug("Sending journal event ...")
 
                 resource_id =
                     cond do
-                        is_binary(content.id) == true -> content.id
-                        is_map(content.id) == true -> content.id |> BSON.ObjectId.encode!()
+                        is_binary(model.id) == true -> model.id
+                        is_map(model.id) == true -> model.id |> BSON.ObjectId.encode!()
                         true -> raise "Not a valid resource id!"
                     end
 
-                params
-                |> Paperwork.Helpers.Journal.journal_entry_payload(action, resource, Paperwork.Id.from_gid(resource_id), trigger, Paperwork.Id.from_gid(global_id))
+                content
+                |> Paperwork.Helpers.Journal.journal_entry_payload(action, resource, Paperwork.Id.from_gid(resource_id), trigger, Paperwork.Id.from_gid(global_id), relevance)
                 |> Paperwork.Events.Publisher.publish(Paperwork.Helpers.Event.events_exchange(), "")
             _ ->
                 Logger.debug("Not sending journal event.")
@@ -23,12 +23,15 @@ defmodule Paperwork.Helpers.Journal do
         response
     end
 
-    def journal_entry_payload(content, action, resource, %Paperwork.Id{} = resource_gid, trigger, %Paperwork.Id{} = trigger_gid) do
+    def journal_entry_payload(content, action, resource, %Paperwork.Id{} = resource_gid, trigger, %Paperwork.Id{} = trigger_gid, relevance) when is_map(content) and is_list(relevance) do
         trigger_id = trigger_gid.id
         trigger_system_id = trigger_gid.system_id
 
         resource_id = resource_gid.id
         resource_system_id = resource_gid.system_id
+
+        relevant_to =
+            relevance |> Enum.map(fn pid -> %{id: pid.id, system_id: pid.system_id} end)
 
         %{
             trigger: trigger |> validate_trigger!(),
@@ -38,6 +41,7 @@ defmodule Paperwork.Helpers.Journal do
             resource: resource |> validate_resource!(),
             resource_id: resource_id |> validate_resource_id!(),
             resource_system_id: resource_system_id |> validate_resource_system_id!(),
+            relevant_to: relevant_to |> validate_relevant_to!(),
             content: content |> validate_content!() |> Paperwork.Helpers.Map.unstruct!()
         }
     end
@@ -102,6 +106,7 @@ defmodule Paperwork.Helpers.Journal do
             "user" -> resource
             "note" -> resource
             "attachment" -> resource
+            "profile_photo" -> resource
             _ -> raise "Not a valid resource"
         end
     end
@@ -132,6 +137,13 @@ defmodule Paperwork.Helpers.Journal do
        raise "Not a valid resource_system_id"
     end
 
+    def validate_relevant_to!(relevant_to) when is_list(relevant_to) do
+        relevant_to
+    end
+
+    def validate_relevant_to!(relevant_to) when not is_list(relevant_to) do
+        raise "Not a valid relevance"
+    end
 
     def validate_content!(content) when is_map(content) do
         content
