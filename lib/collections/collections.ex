@@ -1,25 +1,25 @@
 require Logger
 require Jason
 
+defimpl String.Chars, for: BSON.ObjectId do
+  def to_string(object_id), do: BSON.ObjectId.encode!(object_id)
+end
+
+defimpl Jason.Encoder, for: BSON.ObjectId do
+    def encode(id, options) do
+        BSON.ObjectId.encode!(id) |> Jason.Encoder.encode(options)
+    end
+end
+
 defmodule Paperwork.Collections do
     defmacro __using__(_opts) do
         quote do
             defimpl Jason.Encoder, for: [__MODULE__] do
-                defp encode_id(%{:id => id} = value) when id != nil do
-                    value
-                    |> Map.put(:id, BSON.ObjectId.encode!(value.id))
-                end
-
-                defp encode_id(%{:id => id} = value) when id == nil do
-                    value
-                end
-
-                def encode(value, opts) do
-                    value
-                    |> encode_id
-                    |> Map.delete(:__struct__)
-                    |> Jason.Encode.map(opts)
-                end
+              def encode(map, opts) do
+                map
+                |> Map.delete(:__struct__)
+                |> Jason.Encode.map(opts)
+              end
             end
 
             def fields() do
