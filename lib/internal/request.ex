@@ -165,4 +165,25 @@ defmodule Paperwork.Internal.Request do
         end
     end
 
+    def journals(params \\ %{}) when is_map(params) do
+        journals(params, true)
+    end
+
+    def journals(params, true=_cached) when is_map(params) do
+        url = "#{Paperwork.Internal.Resource.journals()}"
+        request_get_cached(url, params)
+    end
+
+    def journals(params, false=_cached) when is_map(params) do
+        url = "#{Paperwork.Internal.Resource.journals()}"
+        request_get(url, params)
+    end
+
+    def journals!(params, cached \\ true) when is_map(params) do
+        case journals(params, cached) do
+            {:ok, response} -> response
+            _ -> nil
+        end
+    end
+
 end
