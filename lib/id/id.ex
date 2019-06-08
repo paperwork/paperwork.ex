@@ -14,6 +14,11 @@ defmodule Paperwork.Id do
 
     def split_gid(gid) when is_binary(gid), do: String.split(gid, "@")
 
+
+    def from_gid(nil) do
+        nil
+    end
+
     def from_gid(gid) when is_atom(gid) do
         gid
         |> Atom.to_string()
@@ -47,10 +52,6 @@ defmodule Paperwork.Id do
         }
     end
 
-    def from_gid(nil) do
-        nil
-    end
-
     def validate_gid(gid) when is_binary(gid) do
         case Regex.match?(~r/^([0-9a-f]{24}){1}@([0-9a-f]{24}){1}$/i, gid) do
             true -> {:ok, gid}
@@ -75,6 +76,14 @@ defmodule Paperwork.Id do
             false ->
                 id
         end
+    end
+
+    def to_objectid(%__MODULE__{ id: id } = _, :id) when is_binary(id) do
+        id |> BSON.ObjectId.decode!()
+    end
+
+    def to_objectid(%__MODULE__{ system_id: system_id } = _, :system_id) when is_binary(system_id) do
+        system_id |> BSON.ObjectId.decode!()
     end
 end
 
